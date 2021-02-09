@@ -1,7 +1,7 @@
 # MIPS
 This is my collection of programs created using MIPS Mars Simulator
 # Range.asm
-This program prints out a range of nubmers between two user given input
+This program prints out a range of numbers between two user given input
 # Compress.asm
 This program takes in strings and compresses the string down to a char + count format<br/>
 Example [ Input -> {AAAAAABBBBAAAA} : Output -> {A6 B4 A4} ]
