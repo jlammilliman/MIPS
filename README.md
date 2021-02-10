@@ -15,4 +15,9 @@ Example [ Input -> N = 4, M = 5 ]<br/>
 11111<br/>
 # Directory 
 This uses predefined nodes with employee name, number, and age, along with pointers to next nodes (Singly-linked) and takes in a keyword to pull information on desired employees<br/>
-[WIP] Still needs to be configured to compare node data for desired output
+Example:<br/>
+Searching for: an<br/>
+Ryan B. Howard, #20010321, age 24<br/>
+Andy B. Bernard Jr., #20051229, age 32<br/><br/>
+
+-- program is finished running --
