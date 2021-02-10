@@ -12,94 +12,19 @@
 # Example Output :	Jim D. Halpert, #20030422, age 27
 #
 ###############################################
-
-
-####### Read and print the keyword ############
-	la		$a0, kyw
-	li		$v0, 4
-	syscall
-	la		$a0, keyword
-	syscall
-	la		$a0, kyw2
-	syscall
 	
-	la		$a0, newLine
-	syscall
-	
-####### Convert keyword [A-Z] -> [a-z] #########
-	li		$t0, 0
-	li		$t1, 65 # A
-	li		$t2, 90 # Z
-loop1:
-	lbu		$t3, keyword($t0)
-	beqz	$t3, done1
-	blt		$t3, $t1, next1
-	bgt		$t3, $t2, next1
-	addi	$t3, $t3, 32
-	sb		$t3, keyword($t0)
-next1:
-	add		$t0, $t0, 1
-	b  		loop1
-	
-done1:
 ####### Print "Searching for: keyword" ########
 	la		$a0, src4
+	li		$v0, 4
 	syscall
 	la		$a0, keyword
-	syscall
-	la		$a0, newLine
-	syscall
-
-###############################################
-#       Iterate through nodes                 #
-###############################################
-	la		$t0, first			# Grab the first person
-	
-loopNodes:	
-	lw		$t1, 4($t0)		# Grab EmpID
-	lb		$t2, 8($t0)		# Grab Age
-	la		$t3, 9($t0)		# Grab Name [2 words + 1 byte = 9]
-	
-	b 	matchMaker # Go to the matching algorithm now that we have things to play with
-	returnMatch:
-
-	# Print Name
-	move	$a0, $t3
 	li		$v0, 4
 	syscall
-	
-	# Print a ", "
-	la		$a0, cmmSpc
-	li		$v0, 4
-	syscall
-	
-	# Print EmpID
-	move	$a0, $t1
-	li		$v0, 1
-	syscall
-
-	# Print a ", "
-	la		$a0, cmmSpc
-	li		$v0, 4
-	syscall
-	
-	# Print Age
-	move	$a0, $t2
-	li		$v0, 1
-	syscall
-	
 	la		$a0, newLine
 	li		$v0, 4
 	syscall
-	
-skipPrint:
-	lw		$t0, 0($t0)		# Pointer set to next node
-	bne		$t0, -1, loopNodes
-
-
-	b 		voidMe # If you get here naturally, skip
 ###############################################
-#       Time to find some long lost love      #
+#       Loop through each node and compare    #
 ###############################################
 # The general process here:
 # 	[1] Take the first letter of empName and convert to lowercase
@@ -115,51 +40,92 @@ skipPrint:
 #	empName -> $t3
 #	 empAge -> $t2
 #	  empID -> $t1
-#  empIndex -> $t0
+#      empIndex -> $t0
 ###############################################
-matchMaker:
-	move	$t4, $t0
-	
-	move	$a0, $t4
+	li		$t5, 65		# A
+	li		$t6, 90		# Z
+	la		$t0, first	# Grab the first person
+	li		$t4, 0 		# Keyword Index Count
+loop:
+	beq		$t0, -1, exit # End of list? Cool
+	lw		$t1, 4($t0) # EmpID
+	lb		$t2, 8($t0) # Age
+	la		$t3, 9($t0) # Name
+	move	$t9, $t0
+loopM:
+	lb		$t7, 0($t3) # Get current empName index char
+	lb		$t8, keyword($t4) # Grab keyword index char
+	beqz	$t8, print	# If end of keyword, we have a match! Print that baby
+	beqz	$t7, skipPrint # If end of empName, move to next node
+##### Force lowercase both empName and keyword #
+	blt		$t7, $t5, isLower 
+	bgt		$t7, $t6, isLower
+	addi	$t7, $t7, 32
+isLower:
+	blt		$t8, $t5, isLowKey 
+	bgt		$t8, $t6, isLowKey
+	addi	$t8, $t8, 32
+isLowKey:
+####### Compare chars, if a match, i++ ########
+	addi	$t3, $t3, 1 # Always increment empName
+	bne		$t7, $t8, reset
+	addi	$t4, $t4, 1 # keyword match count ++
+	b		loopM
+reset:
+	li		$t4, 0
+	b 		loopM
+####### Refresh empName, print empData ########
+print:
+	li		$t4, 0		# Reset keyword index = 0
+	la		$t3, 9($t0)	# Grab Name [2 words + 1 byte = 9]
+	# Print Name
+	move	$a0, $t3
 	li		$v0, 4
 	syscall
 	
-	li		$t8, 0 	# keyword[lowercase] index
-	li		$t5, 65 # A
-	li		$t6, 90 # Z
-loopMatch:
-	lbu		$t9, keyword($t8)
-	beqz	$t9, returnMatch	# If we reach the length of keyword, we found a match
-	beqz	$t4, skipPrint		# If we have reached the end of empName, and not exited with a match, do not print this employee
-	blt		$t4, $t5, nextMatch
-	bgt		$t4, $t6, nextMatch
-	addi	$t4, $t4, 32
-nextMatch:
-	beq		$t7, $t9, charMatchFound
-	li		$t8, 0	# If its not a matched char, reset matched keyword[lowercase] chars to 0
-	b 		skipMe3	# Do not run this if we get here naturally
-charMatchFound:
-	addi	$t8, $t8, 1	# One more matched char for keyword[lowercase]
-skipMe3:
-	add		$t4, $t4, 1
-	b  		loopMatch	
+	# Be Blessed
+	la		$a0, blessed
+	li		$v0, 4
+	syscall
 	
+	# Print EmpID
+	move	$a0, $t1
+	li		$v0, 1
+	syscall
 	
+	# Print Age
+	la		$a0, age
+	li		$v0, 4
+	syscall
 	
-voidMe:
+	# Print Age?
+	move	$a0, $t2
+	li		$v0, 1
+	syscall
+	
+	# New Line
+	la		$a0, newLine
+	li		$v0, 4
+	syscall
+	
+	lw		$t0, 0($t0) # Pointer set to next node
+	b 		loop
+	
+skipPrint:
+	move 	$t0, $t9
+	lw		$t0, 0($t0) # Move to next node address
+	li		$t4, 0		# Reset keyword index = 0	
+	b 		loop
+exit:
+
 ###############################################
 #       Saved strings, other utils            #
 ###############################################
 .data
 src4:		.asciiz		"Searching for: "
-kyw:		.asciiz		"*** Keyword: \""
-kyw2:		.asciiz		"\" ***"
-age:		.asciiz		"age "
+age:		.asciiz		", age "
 newLine:	.asciiz		"\n"
-cmmSpc:		.asciiz		", "
-
-# Hold onto useful employees
-empName:	.space	 	40
+blessed:	.asciiz		", #"
 
 ###############################################
 
@@ -170,7 +136,7 @@ empName:	.space	 	40
 # You can (and should!) have a separate .data section containing other variables (e.g. string constants).
 # NOTE: we will replace everything between the START DATA and END DATA tags during testing!
 .data
-keyword:    .asciiz     "m"                    # String to search for, NOTE: this may be empty (matches everyone)
+keyword:    .asciiz     "a"                    # String to search for, NOTE: this may be empty (matches everyone)
 
 
 first:      .word       node2                   # Next pointer
@@ -202,4 +168,3 @@ node7:      .word       -1
             .byte       45
             .asciiz     "Robert California"
 ### END DATA ###
-
